@@ -30,13 +30,13 @@ def getCart(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def getBrands(request):
-    instance = ModelProduct.objects.order_by().values_list("brand__name", flat=True).distinct()
+    instance = ModelBrand.objects.all().values()
     return Response(instance)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def getCategory(request):
-    instance = ModelProduct.objects.order_by().values_list("category__name", flat=True).distinct()
+    instance = ModelCategory.objects.all().values()
     return Response(instance)
 
 
