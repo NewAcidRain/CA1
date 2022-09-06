@@ -1,11 +1,12 @@
 import openpyxl
 from django.shortcuts import render
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from Cigarettes.serializer import *
 from django.shortcuts import redirect
+from django_filters import rest_framework as filters
 
 
 def mainPage(request):
@@ -102,7 +103,6 @@ def editCart(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def getProducts(request):
-
     name = request.GET.get('name')
     category = request.GET.get('category')
     id = request.GET.get('id')
@@ -113,12 +113,9 @@ def getProducts(request):
     if name:
         instance = ModelProduct.objects.filter(name=name).values()
         return Response(instance)
-
     if id:
-        instance = ModelProduct.objects.get(id=id)
-        serializer = ForGetProductSerializer(
-            instance=instance)
-        return Response(serializer.data)
+        instance = ModelProduct.objects.filter(id=id).values()
+        return Response(instance)
 
     if category:
         instance = ModelProduct.objects.filter(category=category).values()

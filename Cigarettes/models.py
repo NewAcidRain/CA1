@@ -26,7 +26,7 @@ class ModelBrand(models.Model):
 class ModelProduct(models.Model):
     name = models.CharField(max_length=255, null=True, verbose_name='Название')
     price = models.IntegerField(default=None, null=True, verbose_name='Цена')
-    brand = models.ForeignKey(blank=True, verbose_name='Бренд', to=ModelBrand, on_delete=models.CASCADE)
+    brand = models.ForeignKey(blank=True, verbose_name='Бренд', to=ModelBrand, on_delete=models.CASCADE,related_name='brand_serializer')
     photo_url = models.ImageField(default=None, verbose_name='Фото',blank=True)
     volume = models.CharField(max_length=255,default=1,verbose_name='Кол-во',blank=True)
     category = models.ForeignKey(to=ModelCategory,on_delete=models.CASCADE,default=None,null=True,verbose_name='Категория')

@@ -10,15 +10,16 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ForGetProductSerializer(serializers.ModelSerializer):
-    # category = serializers.SlugRelatedField(slug_field='name',read_only=True)
+    category = serializers.SlugRelatedField(slug_field='name',read_only=True)
+    brand = serializers.SlugRelatedField(slug_field='id', read_only=True)
     class Meta:
         model = ModelProduct
-        fields = ('id', 'name', 'brand', 'price','category_id','volume',)
+        fields = ('id', 'name', 'brand', 'price','category','volume',)
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModelProduct
-        fields = ('id', 'name', 'brand', 'price','category','volume',)
+        fields = ('id', 'name', 'brand_serializer', 'price','category','volume',)
 
 
 class CartSerializer(serializers.ModelSerializer):
