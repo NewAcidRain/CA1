@@ -19,7 +19,7 @@ class MainCart(admin.ModelAdmin):
 
 class MainProduct(admin.ModelAdmin):
     list_display = ('id','category' ,'name', 'volume','brand', 'price','get_html_photo')
-    search_fields = ('name',)
+    search_fields = ('name','category__name',)
     list_display_links = ('name', 'id')
     readonly_fields = ['get_html_photo']
 
@@ -33,7 +33,14 @@ class MainProduct(admin.ModelAdmin):
     get_html_photo.short_description = 'Миниатюра'
 
 
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('id','name')
+
+
+class BrandAdmin(admin.ModelAdmin):
+    list_display = ('id','name')
 
 admin.site.register(ModelProduct, MainProduct)
 admin.site.register(ModelCart, MainCart)
-admin.site.register(ModelCategory)
+admin.site.register(ModelCategory,CategoryAdmin)
+admin.site.register(ModelBrand,BrandAdmin)

@@ -29,9 +29,13 @@ def getCart(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def getBrands(request):
-    instance = ModelProduct.objects.order_by().values_list("brand", flat=True).distinct()
-    # serializer = ProductSerializer(data=request.data, instance=instance)
-    # serializer.is_valid()
+    instance = ModelProduct.objects.order_by().values_list("brand__name", flat=True).distinct()
+    return Response(instance)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def getCategory(request):
+    instance = ModelProduct.objects.order_by().values_list("category__name", flat=True).distinct()
     return Response(instance)
 
 
@@ -48,7 +52,7 @@ def clearCart(request, **kwargs):
         print(str(check_id))
         return Response({'DELETE': f'Запись удалена {check_id}'})
     else:
-        return Response({'clearCart_ERROR:ID не найден'})
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET'])
@@ -97,25 +101,27 @@ def editCart(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def getProducts(request):
-        id = request.query_params['id']
-        if id:
-            name = ModelProduct.objects.get(id=id).name
-            price = ModelProduct.objects.get(id=id).price
-            brand = ModelProduct.objects.get(id=id).brand
-            volume = ModelProduct.objects.get(id=id).volume
-            category = ModelProduct.objects.get(id=id).category
-            instance = ModelProduct.objects.get(id=id)
-            serializers = ForGetProductSerializer(
-                data={'name': name, 'price': price, 'brand': brand, 'volume': volume, 'category': category},
-                instance=instance)
-            serializers.is_valid()
-            return Response(serializers.data)
 
+    name = request.GET.get('name')
+    category = request.GET.get('category')
+    id = request.GET.get('id')
+    brand = request.GET.get('brand')
+    if brand:
+        instance = ModelProduct.objects.filter(brand=brand).values()
+        return Response(instance)
+    if name:
+        instance = ModelProduct.objects.filter(name=name).values()
+        return Response(instance)
 
+    if id:
+        instance = ModelProduct.objects.get(id=id)
+        serializer = ForGetProductSerializer(
+            instance=instance)
+        return Response(serializer.data)
 
-
-
-
+    if category:
+        instance = ModelProduct.objects.filter(category=category).values()
+        return Response(instance)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -177,8 +183,8 @@ def addItem(request):
                   "Кальянная смесь",
                   "МК Кальянная смесь"}
     for cat in CATEGORIES:
-        if not ModelCategory.objects.filter(category_name=cat):
-            ModelCategory.objects.create(category_name=cat)
+        if not ModelCategory.objects.filter(name=cat):
+            ModelCategory.objects.create(name=cat)
     book = openpyxl.load_workbook(filename='C:/Users/stepr/OneDrive/Рабочий стол/Main.xlsx')
     sheet = book['Main']
     for i in range(2, 121):
@@ -190,9 +196,10 @@ def addItem(request):
                     current_volume = int(j)
                     break
                 current_brand += j + ' '
+            current_brand=ModelBrand.objects.get_or_create(name=current_brand)[0]
         if str(sheet['D' + str(i)].value).startswith("Одноразовая электронная сигарета"):
             sheet['D' + str(i)].value = sheet['D' + str(i)].value.replace('Одноразовая электронная сигарета', '')
-            sheet['D' + str(i)].value = sheet['D' + str(i)].value.replace(current_brand, '')
+            sheet['D' + str(i)].value = sheet['D' + str(i)].value.replace(current_brand.name, '')
             sheet['D' + str(i)].value = sheet['D' + str(i)].value.replace("  ", ' ')
             name = ''
             for index, word in enumerate(sheet['D' + str(i)].value.split()[::-1]):
@@ -204,7 +211,7 @@ def addItem(request):
             price = sheet['H' + str(i)].value
             name = name[0].upper() + name[1:]
             ModelProduct.objects.create(name=name, volume=current_volume, price=price, brand=current_brand,
-                                        photo_url=None, category=ModelCategory.objects.get(category_name=category))
+                                        photo_url=None, category=ModelCategory.objects.get(name=category))
     for row in range(121, 630):
         if sheet['B' + str(row)].value is None:
             # ЗНАЧИТ СТРОКА С БРЕНДОМ
@@ -213,6 +220,7 @@ def addItem(request):
                 if word.isdigit():
                     break
                 current_brand += word + ' '
+            current_brand = ModelBrand.objects.get_or_create(name=current_brand)[0]
         else:
             # ЗНАЧИТ СТРОКА С ТОВАРОМ
             # Определяем категорию
@@ -230,7 +238,7 @@ def addItem(request):
                 print(f"NOT FOUND CATEGORY FOR {row=}")
                 continue
             # print(f"D{row} {sheet['D' + str(row)].value}->{sheet['D' + str(row)].value.replace(current_brand, '')}")
-            sheet['D' + str(row)].value = sheet['D' + str(row)].value.replace(current_brand, '')  # УБИРАЕМ БРЕНД
+            sheet['D' + str(row)].value = sheet['D' + str(row)].value.replace(current_brand.name, '')  # УБИРАЕМ БРЕНД
             # ДЕЛИМ НАЗВАНИЕ НА ИМЯ И КОЛ-ВО
             name = ''
             current_volume = ''
@@ -249,11 +257,10 @@ def addItem(request):
                 raise e
             name = name or sheet['D' + str(row)].value
             price = sheet['H' + str(row)].value
-            # print('-' * 30)
             name = name[0].upper() + name[1:]
             ModelProduct.objects.create(name=name, volume=current_volume or 'Безразмерный', price=price,
                                         brand=current_brand,
                                         photo_url=None,
-                                        category=ModelCategory.objects.get(category_name=category))
+                                        category=ModelCategory.objects.get(name=category))
 
     return render(request, 'Mainpage.html')
