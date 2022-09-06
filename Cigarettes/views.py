@@ -1,3 +1,4 @@
+import openpyxl
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -28,16 +29,10 @@ def getCart(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def getBrands(request):
-    brand = request.query_params['brand']
-    check_id = ModelProduct.objects.filter(brand=brand).values()
-    check_id = str(check_id)
-    if brand in check_id:
-        instance = ModelProduct.objects.filter(brand=brand).values()
-        serializer = ProductSerializer(data=request.data, instance=instance)
-        serializer.is_valid()
-        return Response(instance)
-    else:
-        return Response({'getBrand_ERROR:ID не найден'})
+    instance = ModelProduct.objects.order_by().values_list("brand", flat=True).distinct()
+    # serializer = ProductSerializer(data=request.data, instance=instance)
+    # serializer.is_valid()
+    return Response(instance)
 
 
 @api_view(['GET'])
@@ -102,19 +97,24 @@ def editCart(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def getProducts(request):
-    id = request.query_params['id']
-    name = request.query_params['name']
-    brand = request.query_params['brand']
-    brand_check = ModelProduct.objects.filter(brand=brand).values()
-    id_check = ModelProduct.objects.filter(id=id).values()
-    name_check = ModelProduct.objects.filter(name=name).values()
-    if name in str(name_check) and brand in str(brand_check) and id in str(id_check):
-        instance = ModelProduct.objects.filter(name=name, id=id, brand=brand).values()
-        serializer = CartSerializer(data=request.data, instance=instance)
-        serializer.is_valid()
-        return Response(instance)
-    else:
-        return Response({'getProduct_ERROR:ID не найден'})
+        id = request.query_params['id']
+        if id:
+            name = ModelProduct.objects.get(id=id).name
+            price = ModelProduct.objects.get(id=id).price
+            brand = ModelProduct.objects.get(id=id).brand
+            volume = ModelProduct.objects.get(id=id).volume
+            category = ModelProduct.objects.get(id=id).category
+            instance = ModelProduct.objects.get(id=id)
+            serializers = ForGetProductSerializer(
+                data={'name': name, 'price': price, 'brand': brand, 'volume': volume, 'category': category},
+                instance=instance)
+            serializers.is_valid()
+            return Response(serializers.data)
+
+
+
+
+
 
 
 @api_view(['GET'])
@@ -138,7 +138,6 @@ def addToCart(request):
         a.save()
     a = ModelCart.objects.get(id=a.id)
     serializer = CartSerializer(data={'chat_id': chat_id, 'quantity': quantity_req, 'product': id_req}, instance=a)
-    print(request.data)
     if serializer.is_valid(raise_exception=True):
         serializer.save()
     else:
@@ -146,7 +145,115 @@ def addToCart(request):
     return Response(serializer.data)
 
 
-# @api_view(['GET'])
-# @permission_classes([AllowAny])
-# def addItem(request):
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def addItem(request):
+    CATEGORIES = {"Одноразовая электронная сигарета",
+                  "Одноразовая POD-система",
+                  "Уголь",
+                  "Плитка",
+                  "Щипцы",
+                  "Калауд",
+                  "Уплотнитель",
+                  "Шило",
+                  "Вилка",
+                  "Уплотнители для колбы",
+                  "Силикон",
+                  "Колба",
+                  "Мундштуки",
+                  "Табак",
+                  "Кальянная смесь",
+                  "Жидкость",
+                  "Табак сигаретный",
+                  "Бумага для самокруток",
+                  "Cигариллы с фильтром",
+                  "Pod система",
+                  "Электронная pod система",
+                  "Зажигалка",
+                  "Чаша",
+                  "Машинка для самокруток",
+                  "Фильтры для самокруток",
+                  "Сигариллы",
+                  "Кальянная смесь",
+                  "МК Кальянная смесь"}
+    for cat in CATEGORIES:
+        if not ModelCategory.objects.filter(category_name=cat):
+            ModelCategory.objects.create(category_name=cat)
+    book = openpyxl.load_workbook(filename='C:/Users/stepr/OneDrive/Рабочий стол/Main.xlsx')
+    sheet = book['Main']
+    for i in range(2, 121):
+        if sheet['B' + str(i)].value is None:
+            current_brand = ''
+            current_volume = 0
+            for j in sheet['A' + str(i)].value.split():
+                if j.isdigit():
+                    current_volume = int(j)
+                    break
+                current_brand += j + ' '
+        if str(sheet['D' + str(i)].value).startswith("Одноразовая электронная сигарета"):
+            sheet['D' + str(i)].value = sheet['D' + str(i)].value.replace('Одноразовая электронная сигарета', '')
+            sheet['D' + str(i)].value = sheet['D' + str(i)].value.replace(current_brand, '')
+            sheet['D' + str(i)].value = sheet['D' + str(i)].value.replace("  ", ' ')
+            name = ''
+            for index, word in enumerate(sheet['D' + str(i)].value.split()[::-1]):
+                if word.isdigit():
+                    name = ' '.join(sheet['D' + str(i)].value.split()[:-(index + 1)])
+                    current_volume = ' '.join(sheet['D' + str(i)].value.split()[-(index + 1):])
+                    break
+            category = sheet['N' + str(2)].value
+            price = sheet['H' + str(i)].value
+            name = name[0].upper() + name[1:]
+            ModelProduct.objects.create(name=name, volume=current_volume, price=price, brand=current_brand,
+                                        photo_url=None, category=ModelCategory.objects.get(category_name=category))
+    for row in range(121, 630):
+        if sheet['B' + str(row)].value is None:
+            # ЗНАЧИТ СТРОКА С БРЕНДОМ
+            current_brand = ''
+            for word in sheet['A' + str(row)].value.split():
+                if word.isdigit():
+                    break
+                current_brand += word + ' '
+        else:
+            # ЗНАЧИТ СТРОКА С ТОВАРОМ
+            # Определяем категорию
+            found_category = False
+            for i in range(1, len(sheet['D' + str(row)].value.split())):
+                if ' '.join(sheet['D' + str(row)].value.split()[:i]) not in CATEGORIES:
+                    continue
+                else:
+                    category = ' '.join(sheet['D' + str(row)].value.split()[:i])
+                    # print(f"D{row} {sheet['D' + str(row)].value}->{' '.join(sheet['D' + str(row)].value.split()[:])}")
+                    sheet['D' + str(row)].value = ' '.join(sheet['D' + str(row)].value.split()[i:])
+                    found_category = True
+                    break
+            if not found_category:
+                print(f"NOT FOUND CATEGORY FOR {row=}")
+                continue
+            # print(f"D{row} {sheet['D' + str(row)].value}->{sheet['D' + str(row)].value.replace(current_brand, '')}")
+            sheet['D' + str(row)].value = sheet['D' + str(row)].value.replace(current_brand, '')  # УБИРАЕМ БРЕНД
+            # ДЕЛИМ НАЗВАНИЕ НА ИМЯ И КОЛ-ВО
+            name = ''
+            current_volume = ''
+            try:
+                for index, word in enumerate(sheet['D' + str(row)].value.split()[::-1]):
+                    if word.isdigit():
+                        # print(
+                        #     f"D{row} name={' '.join(sheet['D' + str(row)].value.split()[:-(index + 1)])}\tcurrent_vol={' '.join(sheet['D' + str(row)].value.split()[-(index + 1):])}")
 
+                        name = ' '.join(sheet['D' + str(row)].value.split()[:-(index + 1)])
+                        current_volume = ' '.join(sheet['D' + str(row)].value.split()[-(index + 1):])
+
+                        break
+            except AttributeError as e:
+                print(f'ERROR ON {row} row')
+                raise e
+            name = name or sheet['D' + str(row)].value
+            price = sheet['H' + str(row)].value
+            # print('-' * 30)
+            name = name[0].upper() + name[1:]
+            ModelProduct.objects.create(name=name, volume=current_volume or 'Безразмерный', price=price,
+                                        brand=current_brand,
+                                        photo_url=None,
+                                        category=ModelCategory.objects.get(category_name=category))
+
+    return render(request, 'Mainpage.html')

@@ -1,5 +1,8 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
+from import_export.admin import ImportExportActionModelAdmin
+from import_export import resources
+from import_export.widgets import ForeignKeyWidget
 
 from Cigarettes.models import *
 
@@ -15,7 +18,7 @@ class MainCart(admin.ModelAdmin):
 
 
 class MainProduct(admin.ModelAdmin):
-    list_display = ('id', 'name', 'brand', 'price', 'get_html_photo')
+    list_display = ('id','category' ,'name', 'volume','brand', 'price','get_html_photo')
     search_fields = ('name',)
     list_display_links = ('name', 'id')
     readonly_fields = ['get_html_photo']
@@ -30,5 +33,7 @@ class MainProduct(admin.ModelAdmin):
     get_html_photo.short_description = 'Миниатюра'
 
 
+
 admin.site.register(ModelProduct, MainProduct)
 admin.site.register(ModelCart, MainCart)
+admin.site.register(ModelCategory)

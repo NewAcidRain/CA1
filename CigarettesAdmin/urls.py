@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
-from Cigarettes.views import mainPage, clearCart,getCart, editCart, getProducts, getBrands,addToCart
+from Cigarettes.views import mainPage, clearCart,getCart, editCart, getProducts, getBrands,addToCart,addItem
 
 #TODO:
 '''
@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/editCart',editCart),
     path('api/getProducts',getProducts),
     path('api/getBrands',getBrands),
-    path('api/addToCart',addToCart)
+    path('api/addToCart',addToCart),
+    path('api/addItem',addItem),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

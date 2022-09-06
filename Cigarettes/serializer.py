@@ -2,16 +2,23 @@ from rest_framework import serializers
 from Cigarettes.models import *
 
 
+class CategorySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=255)
+    class Meta:
+        model = ModelCategory
+        fields = ('__all__')
+
+
+class ForGetProductSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(slug_field='name',read_only=True)
+    class Meta:
+        model = ModelProduct
+        fields = ('id', 'name', 'brand', 'price','category','volume',)
+
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModelProduct
-        fields = ('id', 'name', 'brand', 'price')
-
-
-class BrandSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ModelProduct
-        fields = ('brand',)
+        fields = ('id', 'name', 'brand', 'price','category','volume',)
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -23,10 +30,8 @@ class CartSerializer(serializers.ModelSerializer):
         model = ModelCart
         fields = ('product', 'quantity', 'chat_id')
 
-    @staticmethod
-    def delete(instance, validation_data):
-        instance.product = validation_data.get('product')
-        instance.quantity = validation_data.get('quantity')
-        instance.chat_id = validation_data.get('chat_id')
-        instance.save()
-        return instance
+
+class BrandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModelProduct
+        fields = ('brand',)
