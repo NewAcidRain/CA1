@@ -3,3 +3,4 @@ openpyxl==3.0.10
 djangorestframework==3.13.1
 Pillow
 django-jet-reboot
+django-cleanup

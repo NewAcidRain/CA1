@@ -1,4 +1,7 @@
 from django.db import models
+from django.core.files.storage import default_storage
+from django.db.models.signals import post_delete, pre_delete
+from django.dispatch import receiver
 
 
 class ModelCategory(models.Model):
@@ -37,6 +40,11 @@ class ModelProduct(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+# @receiver(post_delete, sender=ModelProduct)
+# def delete_associated_files(sender, instance, **kwargs):
+#         instance.photo_url.delete(False)
+
 
 
 class ModelCart(models.Model):

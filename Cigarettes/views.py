@@ -6,11 +6,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from Cigarettes.serializer import *
 from django.shortcuts import redirect
-from django_filters import rest_framework as filters
 
 
 def mainPage(request):
-    return redirect('/admin/')
+        return redirect('/admin/')
 
 
 @api_view(['GET'])
