@@ -41,9 +41,6 @@ class ModelProduct(models.Model):
     def __str__(self):
         return f"{self.name}"
 
-# @receiver(post_delete, sender=ModelProduct)
-# def delete_associated_files(sender, instance, **kwargs):
-#         instance.photo_url.delete(False)
 
 
 
